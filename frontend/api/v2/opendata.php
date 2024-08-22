@@ -3,8 +3,8 @@
 // This is for all public (non-password protected) data. Most of these functions previously lived in the chargecontroller.php script
 
 //comment out these lines for production version
-/*ini_set('display_errors', 1); 
-ini_set('display_startup_errors', 1); 
+/*ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);*/
 
 /**
@@ -28,15 +28,15 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
     //echo "Key = Value";
 
     //check if value queried exists
-    if(!testValue($_GET["value"])){
-      echo "Value not found. Acceptable values: PV-current, PV-current, PV-power-H,PV-power-L, PV-voltage, battery-percentage, battery-voltage, charge-current, charge-power-H, charge-power-L, load-current, load-power, load-voltage, datetime, scaled-wattage";
+    if(!testValue(strtolower($_GET["value"]))){
+      echo "Value not found. Acceptable values: pv-current, pv-current, pv-power-h, pv-power-L, pv-voltage, battery-percentage, battery-voltage, charge-current, charge-power-h, charge-power-l, load-current, load-power, load-voltage, datetime, scaled-wattage";
       exit;
     }
 
-    $qValue = str_replace("-"," ",$_GET["value"]);
+    $qValue = strtolower(str_replace("-"," ",$_GET["value"]));
 
     if($qValue == "scaled wattage"){
-      $qValue = "PV power L";
+      $qValue = "pv power l";
       $scaleIt = true;
     }
 
@@ -68,7 +68,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         }
 
         //scale the wattage if required
-        if($qValue == 'PV-power-L' && $scaleIt == true){
+        if($qValue == 'pv-power-l' && $scaleIt == true){
           foreach(array_reverse($tFile) as $k => $l){
             if ($k == count($tFile) - 1){
               //skip row 0 which contains the headers
@@ -88,7 +88,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
             //array_push($valueTimeSeries, array($l[0] => $l[$valuePosition]));
           }
         }
-         
+
       }
 
       $headerOutput = array(
@@ -107,7 +107,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 
       $outputVal = '';
 
-      if ($readData != FALSE){    
+      if ($readData != FALSE){
 
         //loop through the header line to find the position of the requested value
         for ($v = 0; $v < sizeof($readData[0]);$v++){
@@ -129,7 +129,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
       );
 
       echo json_encode($vOutput);
-    }  
+    }
   }
 
   /**
@@ -143,8 +143,8 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
     //echo "Key = Line";
     $readData = chargeControllerData($todayFile);
 
-    if ($readData != FALSE){    
-      
+    if ($readData != FALSE){
+
       if($_GET["line"] == "len"){//return the number of rows in the file
         $lOutput = array($_GET["line"] => (count($readData)-1));
       } else if($_GET["line"] == "head"){//return the CSV data headers
@@ -163,7 +163,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 
           $returnArray[$repKey] = $readData[count($readData)-1-$_GET["line"]][$p];
           //array_push($returnArray, array($readData[0][$p] => $readData[count($readData)-1-$_GET["line"]][$p]));
-        }  
+        }
 
         $lOutput = array(
           $_GET["line"] => $returnArray,
@@ -173,7 +173,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 
       echo json_encode($lOutput, JSON_UNESCAPED_SLASHES);
     }
-    
+
 
     //get a full file
   } else if (array_key_exists("day", $_GET)) {
@@ -305,7 +305,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 
     #return the list of names of all the servers stored locally
     if($_GET["networkInfo"] == "deviceList"){
-  
+
       $output = [];
 
       $fileName = "/home/pi/solar-protocol/backend/data/deviceList.json";
@@ -337,7 +337,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 
     #return the POE logs stored locally for all devices
     } else if($_GET["networkInfo"] == "poe"){
-  
+
       $output = [];
 
       $fileName = "/home/pi/solar-protocol/backend/data/deviceList.json";
@@ -352,7 +352,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 
     #return the timestamp from when the device posted the data to the server
     } else if($_GET["networkInfo"] == "timestamp"){
-  
+
       $output = [];
 
       $fileName = "/home/pi/solar-protocol/backend/data/deviceList.json";
@@ -366,7 +366,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
       echo json_encode(array($_GET["networkInfo"] =>$output));
 
     } else if($_GET["networkInfo"] == "dump"){
-  
+
       $fileName = "/home/pi/solar-protocol/backend/data/deviceList.json";
       $contents = json_decode(file_get_contents($fileName),true);
 
@@ -408,7 +408,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 //check if the requested value exists
 function testValue($v){
 
-  $possibleValues = array('PV-current','PV-current','PV-power-H','PV-power-L','PV-voltage','battery-percentage','battery-voltage','charge-current','charge-power-H', 'charge-power-L','load-current','load-power','load-voltage','datetime','scaled-wattage');
+  $possibleValues = array('pv-current','pv-current','pv-power-h','pv-power-l','pv-voltage','battery-percentage','battery-voltage','charge-current','charge-power-h', 'charge-power-l','load-current','load-power','load-voltage','datetime','scaled-wattage');
 
   foreach($possibleValues as $aV){
     if($aV == $v){
@@ -434,18 +434,18 @@ function justTracerDataFiles($dir){
 
 //converts a file of CC data to an array
 function chargeControllerData($fileName){
-    
+
   $rawDataArray = [];
 
   if (($h = fopen("{$fileName}", "r")) !== FALSE) {
-    /** 
+    /**
      * Each line in the file is converted into an individual array that we call $data
      * The items of the array are comma separated
     **/
-    while (($data = fgetcsv($h, 1000, ",")) !== FALSE) 
+    while (($data = fgetcsv($h, 1000, ",")) !== FALSE)
     {
       // Each individual array is being pushed into the nested array
-      $rawDataArray[] = $data;        
+      $rawDataArray[] = $data;
     }
 
     // Close the file
@@ -526,7 +526,7 @@ function getServerCCData(){
     //chargeControllerData($fileName);
 
     if (is_numeric($_GET["server"])){
-      
+
       //echo file_get_contents($dataPath . strtolower(str_replace(' ', '', $nameList[$_GET["server"]])) . '.json');
       $output = json_decode(file_get_contents($dataPath . strtolower(str_replace(' ', '', $nameList[$_GET["server"]])) . '.json'));
 
@@ -566,7 +566,7 @@ function getServerCCData(){
         }
 
         $output[$nameList[$d]] = $resp;
-        
+
       }
 
       /*$sOutput = array(
